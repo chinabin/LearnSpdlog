@@ -47,6 +47,10 @@
         "bitset": "cpp",
         "cinttypes": "cpp",
         "regex": "cpp",
-        "cstddef": "cpp"
+        "cstddef": "cpp",
+        "complex": "cpp",
+        "list": "cpp",
+        "iomanip": "cpp",
+        "typeindex": "cpp"
     }
 }

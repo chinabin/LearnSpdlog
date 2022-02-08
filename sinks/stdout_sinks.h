@@ -3,19 +3,17 @@
 #include <cstdio>       // stdout stderr
 #include <string>
 
+#include "sink.h"
+
 namespace fatdog {
 
-namespace sinks {
-
-class stdout_sink {
+class stdout_sink: public sink {
 public:
-    explicit stdout_sink();
+    stdout_sink();
 
-    void log(const std::string& msg);
+    void log(const log_event& msg) override;
 private:
-    FILE* _file = stdout;
+    FILE* _file{stdout};
 };
-
-}
 
 }
