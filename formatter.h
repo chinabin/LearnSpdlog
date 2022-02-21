@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "log_event.h"
 
@@ -24,7 +25,7 @@ private:
 
 private:
     std::string _pattern;
-    std::vector<format_item*> _formatters;
+    std::vector<std::unique_ptr<format_item>> _formatters;
 };
 
 }

@@ -1,6 +1,7 @@
-#include "formatter.h"
+#include <time.h>
 
-#include "time.h"
+#include "common_func.h"
+#include "formatter.h"
 
 namespace fatdog {
 
@@ -192,7 +193,7 @@ void formatter::set_pattern(const std::string& pattern)
 std::string formatter::format(const log_event& msg)
 {
     std::string formatted_msg;
-    for (auto it : _formatters) {
+    for (auto &it : _formatters) {
         formatted_msg += it->format(msg);
     }
 
@@ -220,65 +221,64 @@ std::string formatter::format(const log_event& msg)
 */
 void formatter::parse()
 {
-    ch_format_item* p = nullptr;
+    std::unique_ptr<ch_format_item> p;
     for (auto it = _pattern.begin(); it != _pattern.end(); ++it) {
         if (*it == '%') {
             if (p) {
-                _formatters.push_back(p);
-                p = nullptr;
+                _formatters.emplace_back(std::move(p));
             }
             char c = *(++it);
             switch (c)
             {
             case 'v':
-                _formatters.push_back(new v_format_item());
+                _formatters.emplace_back(detail::make_unique<v_format_item>());
                 break;
             case 'n':
-                _formatters.push_back(new n_format_item());
+                _formatters.emplace_back(detail::make_unique<n_format_item>());
                 break;
             case 'l':
-                _formatters.push_back(new l_format_item());
+                _formatters.emplace_back(detail::make_unique<l_format_item>());
                 break;
             case 'Y':
-                _formatters.push_back(new Y_format_item());
+                _formatters.emplace_back(detail::make_unique<Y_format_item>());
                 break;
             case 'm':
-                _formatters.push_back(new m_format_item());
+                _formatters.emplace_back(detail::make_unique<m_format_item>());
                 break;
             case 'd':
-                _formatters.push_back(new d_format_item());
+                _formatters.emplace_back(detail::make_unique<d_format_item>());
                 break;
             case 'H':
-                _formatters.push_back(new H_format_item());
+                _formatters.emplace_back(detail::make_unique<H_format_item>());
                 break;
             case 'M':
-                _formatters.push_back(new M_format_item());
+                _formatters.emplace_back(detail::make_unique<M_format_item>());
                 break;
             case 'S':
-                _formatters.push_back(new S_format_item());
+                _formatters.emplace_back(detail::make_unique<S_format_item>());
                 break;
             case 'e':
-                _formatters.push_back(new e_format_item());
+                _formatters.emplace_back(detail::make_unique<e_format_item>());
                 break;
             case '%':
-                _formatters.push_back(new ch_format_item('%'));
+                _formatters.emplace_back(detail::make_unique<ch_format_item>('%'));
                 break;
             case '+':
                 break;
             case '@':
-                _formatters.push_back(new line_format_item());
+                _formatters.emplace_back(detail::make_unique<line_format_item>());
                 break;
             case 's':
-                _formatters.push_back(new s_format_item());
+                _formatters.emplace_back(detail::make_unique<s_format_item>());
                 break;
             case 'g':
-                _formatters.push_back(new g_format_item());
+                _formatters.emplace_back(detail::make_unique<g_format_item>());
                 break;
             case '#':
-                _formatters.push_back(new line_format_item());
+                _formatters.emplace_back(detail::make_unique<line_format_item>());
                 break;
             case '!':
-                _formatters.push_back(new fn_format_item());
+                _formatters.emplace_back(detail::make_unique<fn_format_item>());
                 break;
             
             default:
@@ -290,15 +290,14 @@ void formatter::parse()
         }
         else {
             if (!p) {
-                p = new ch_format_item;
+                p = detail::make_unique<ch_format_item>();
             }
             p->add_ch(*it);
         }
     }
     
     if (p) {
-        _formatters.push_back(p);
-        p = nullptr;
+        _formatters.emplace_back(std::move(p));
     }
 }
 
