@@ -7,9 +7,10 @@
 
 namespace fatdog {
 
-class stdout_sink: public sink {
+class base_sink: public sink {
 public:
-    stdout_sink();
+    base_sink(FILE* file);
+    ~base_sink() {}
 
     void log(const log_event& msg) override;
     void set_formatter(std::unique_ptr<formatter>&& fmter) override;
@@ -20,7 +21,13 @@ public:
     LOG_LEVEL get_level();
     void set_level(LOG_LEVEL level);
 private:
-    FILE* _file{stdout};
+    FILE* _file{nullptr};
+};
+
+class stdout_sink : public base_sink {
+public:
+    stdout_sink();
+
 };
 
 }

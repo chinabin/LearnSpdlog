@@ -24,6 +24,7 @@
     /*
      * 包含 formatter 和 level ，通过 level 判断是否输出日志，通过
      * formatter 格式化日志并落地。
+     * 写日志的时候如果发现 formatter 为空，则创建一个默认的。
     */
     // 1. 调用 formatter 的 format 接口将日志格式化并落地
     virtual void log(const log_event& msg) = 0;
@@ -51,7 +52,7 @@
 - log_event 负责产生日志
     ```c++
     /*
-     * 携带日志信息，包括日志内容、等级、所在文件名、所在文件行、所在行数名、自定义日志时间、线程id 。
+     * 携带日志信息，包括日志内容、等级、所在文件名、所在文件行、所在行数名、日志时间、线程id 。
      * 这些携带的信息会被 formatter 使用，用来产生格式化的数据。
     */
     ```
@@ -71,12 +72,8 @@
     std::string name();
     void add_sink(std::unique_ptr<sink> s);
     // 4. 打印日志
-    void trace(const std::string& msg);
-    void debug(const std::string& msg);
-    void info(const std::string& msg);
-    void warn(const std::string& msg);
-    void error(const std::string& msg);
-    void critical(const std::string& msg);
+    // 形式一: info(123); info("lalala")
+    // 形式二: info("{1} {0}", "world", "hello");
     ```
 - registry 负责管理 logger
     ```c++

@@ -15,10 +15,10 @@ public:
     void initialize_logger(std::shared_ptr<logger> new_logger);
     std::shared_ptr<logger> get(const std::string &logger_name);
     std::shared_ptr<logger> default_logger();
+    logger* default_logger_raw() { return _default_logger.get(); }
     void set_formatter(std::unique_ptr<formatter> fmter);
     void set_level(LOG_LEVEL lvl);
     void set_automatic_registration(bool v) { _automatic_registration = v; }
-    logger* default_logger_raw() { return _default_logger.get(); }
     void set_default_logger(std::shared_ptr<logger> new_logger);
     void drop(const std::string& logger_name);
     void drop_all();

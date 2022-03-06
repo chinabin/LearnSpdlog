@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include "common_func.h"
+#include "type.h"
 
 namespace fatdog {
 
@@ -43,22 +45,9 @@ struct source_loc
     std::string _funcname;
 };
 
-
-struct log_time 
-{
-    std::string _time;
-};
-
-struct extra_info
-{
-    int _thread_id = -1;
-};
-
-
-
 class log_event {
 public:
-    log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const log_time& ltime, const std::string& logger_name, const extra_info& einfo);
+    log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const type::log_clock::time_point& ltime, const std::string& logger_name);
     log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const std::string& logger_name);
 
 public:
@@ -66,8 +55,9 @@ public:
     std::string _logger_name;
     log_level _level;
     source_loc _loc;
-    log_time _time;
-    extra_info _extra_info;
+    type::log_clock::time_point _time;
+
+    size_t _thread_id = detail::thread_id();
 };
 
 }

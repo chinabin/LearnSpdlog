@@ -1,5 +1,7 @@
 #include "log_event.h"
 
+#include "common_func.h"
+
 namespace fatdog {
 
 log_level::log_level(LOG_LEVEL level)
@@ -28,12 +30,12 @@ std::string log_level::format() const
     }
 }
 
-log_event::log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const log_time& ltime, const std::string& logger_name, const extra_info& einfo)
-    :_msg(msg), _level(level), _loc(loc), _time(ltime), _extra_info(einfo), _logger_name(logger_name)
+log_event::log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const type::log_clock::time_point& ltime, const std::string& logger_name)
+    :_msg(msg), _level(level), _loc(loc), _time(ltime), _logger_name(logger_name)
 {}
 
 log_event::log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const std::string& logger_name)
-    :_msg(msg), _level(level), _loc(loc), _logger_name(logger_name)
+    :_msg(msg), _level(level), _loc(loc), _time(detail::now()), _logger_name(logger_name)
 {}
 
 }

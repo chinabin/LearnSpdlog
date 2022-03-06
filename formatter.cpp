@@ -1,5 +1,6 @@
 #include "common_func.h"
 #include "formatter.h"
+#include "type.h"
 
 #include <iostream>
 
@@ -97,15 +98,8 @@ class e_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        using std::chrono::duration_cast;
-        using std::chrono::seconds;
-        std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-
-        auto duration = tp.time_since_epoch();
-        auto secs = duration_cast<seconds>(duration);
-        auto elp = duration_cast<std::chrono::milliseconds>(duration) - duration_cast<std::chrono::milliseconds>(secs);
-
-        return std::to_string(elp.count());
+        auto t = detail::time_fraction<std::chrono::milliseconds>(msg._time);
+        return std::to_string(t.count());
     }
 };
 
@@ -167,17 +161,8 @@ public:
         full_msg += ":";
         full_msg += std::to_string(tm.tm_sec);
         full_msg += ".";
-        {
-            using std::chrono::duration_cast;
-            using std::chrono::seconds;
-            std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-
-            auto duration = tp.time_since_epoch();
-            auto secs = duration_cast<seconds>(duration);
-            auto elp = duration_cast<std::chrono::microseconds>(duration) - duration_cast<std::chrono::microseconds>(secs);
-
-            full_msg += std::to_string(elp.count());
-        }
+        auto t = detail::time_fraction<std::chrono::milliseconds>(msg._time);
+        full_msg += std::to_string(t.count());
         full_msg += "]";
 
         full_msg += " ";
@@ -224,6 +209,48 @@ public:
     }
 };
 
+class color_start_format_item : public format_item {
+public:
+    std::string format(const log_event& msg) override
+    {
+        switch (msg._level._level)
+        {
+        case LOG_LEVEL_TRACE:
+            return white;
+        case LOG_LEVEL_DEBUG:
+            return cyan;
+        case LOG_LEVEL_INFO:
+            return green;
+        case LOG_LEVEL_WARN:
+            return yellow;
+        case LOG_LEVEL_ERROR:
+            return red;
+        case LOG_LEVEL_CRITICAL:
+            return magenta;
+        }
+        return white;
+    }
+private:
+    const std::string black = "\033[30m";
+    const std::string red = "\033[31m";
+    const std::string green = "\033[32m";
+    const std::string yellow = "\033[33m";
+    const std::string blue = "\033[34m";
+    const std::string magenta = "\033[35m";
+    const std::string cyan = "\033[36m";
+    const std::string white = "\033[37m";
+};
+
+class color_end_format_item : public format_item {
+public:
+    std::string format(const log_event& msg) override
+    {
+        return reset;
+    }
+private:
+    const std::string reset = "\033[m";
+};
+
 
 
 formatter::formatter(const std::string& pattern)
@@ -248,6 +275,8 @@ std::unique_ptr<formatter> formatter::clone()
 }
 
 /*
+ * %^           color start
+ * %$           color end
  * %v	        The actual text to log	                                    "some user text"
  * %n	        Logger's name	                                            "some logger name"
  * %l	        The log level of the message	                            "debug", "info", etc
@@ -260,7 +289,6 @@ std::unique_ptr<formatter> formatter::clone()
  * %e	        Millisecond part of the current second 000-999	            "678"
  * %%	        The % sign	                                                "%"
  * %+	        spdlog's default format	                                    "[2014-10-31 23:46:59.678] [mylogger] [info] Some message"
- * %@	        Source file and line (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc. instead of spdlog::trace(...)	my_file.cpp:123
  * %s	        Basename of the source file (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc.)	my_file.cpp
  * %#	        Source line (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc.)	123
  * %!	        Source function (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc. see tweakme for pretty-print)	my_func
@@ -312,9 +340,6 @@ void formatter::parse()
             case '+':
                 _formatters.emplace_back(detail::make_unique<default_format_item>());
                 break;
-            case '@':
-                _formatters.emplace_back(detail::make_unique<line_format_item>());
-                break;
             case 's':
                 _formatters.emplace_back(detail::make_unique<s_format_item>());
                 break;
@@ -323,6 +348,12 @@ void formatter::parse()
                 break;
             case '!':
                 _formatters.emplace_back(detail::make_unique<fn_format_item>());
+                break;
+            case '^':
+                _formatters.emplace_back(detail::make_unique<color_start_format_item>());
+                break;
+            case '$':
+                _formatters.emplace_back(detail::make_unique<color_end_format_item>());
                 break;
             
             default:

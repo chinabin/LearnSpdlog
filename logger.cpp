@@ -46,35 +46,5 @@ std::string logger::name()
     return _logger_name;
 }
 
-// void logger::trace(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_TRACE, msg);
-// }
-
-// void logger::debug(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_DEBUG, msg);
-// }
-
-// void logger::info(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_INFO, msg);
-// }
-
-// void logger::warn(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_WARN, msg);
-// }
-
-// void logger::error(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_ERROR, msg);
-// }
-
-// void logger::critical(const std::string& msg)
-// {
-//     log(LOG_LEVEL::LOG_LEVEL_CRITICAL, msg);
-// }
-
 
 }
