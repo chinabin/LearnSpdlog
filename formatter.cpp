@@ -1,7 +1,7 @@
-#include <time.h>
-
 #include "common_func.h"
 #include "formatter.h"
+
+#include <iostream>
 
 namespace fatdog {
 
@@ -19,7 +19,7 @@ class n_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        return "fatdog";
+        return msg._logger_name;
     }
 };
 
@@ -37,9 +37,8 @@ class Y_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_year + 1900);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_year + 1900);
     }
 };
 
@@ -48,9 +47,8 @@ class m_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_mon + 1);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_mon + 1);
     }
 };
 
@@ -59,9 +57,8 @@ class d_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_mday);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_mday);
     }
 };
 
@@ -70,9 +67,8 @@ class H_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_hour);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_hour);
     }
 };
 
@@ -81,9 +77,8 @@ class M_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_min);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_min);
     }
 };
 
@@ -92,9 +87,8 @@ class S_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        auto ts = time(NULL);
-        auto *tm = localtime(&ts);
-        return std::to_string(tm->tm_sec);
+        auto tm = detail::localtime();
+        return std::to_string(tm.tm_sec);
     }
 };
 
@@ -103,7 +97,15 @@ class e_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        return "123";
+        using std::chrono::duration_cast;
+        using std::chrono::seconds;
+        std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+
+        auto duration = tp.time_since_epoch();
+        auto secs = duration_cast<seconds>(duration);
+        auto elp = duration_cast<std::chrono::milliseconds>(duration) - duration_cast<std::chrono::milliseconds>(secs);
+
+        return std::to_string(elp.count());
     }
 };
 
@@ -113,22 +115,35 @@ public:
     ch_format_item() = default;
 
     ch_format_item(char c)
+        :_ch(c)
     {
-        add_ch(c);
     }
 
     std::string format(const log_event& msg) override
     {
-        return _chs;
-    }
-
-    void add_ch(const char c)
-    {
-        _chs += c;
+        return std::string(1, _ch);
     }
 
 private:
-    std::string _chs;
+    char _ch;
+};
+
+class aggregate_formatter final : public format_item
+{
+public:
+    aggregate_formatter() = default;
+
+    void add_ch(char ch)
+    {
+        _str += ch;
+    }
+    std::string format(const log_event& msg) override
+    {
+        return _str;
+    }
+
+private:
+    std::string _str;
 };
 
 // default format [2014-10-31 23:46:59.678] [mylogger] [info] Some message
@@ -136,7 +151,49 @@ class default_format_item : public format_item {
 public:
     std::string format(const log_event& msg) override
     {
-        return "2022:02:07";
+        std::string full_msg;
+
+        full_msg += "[";
+        auto tm = detail::localtime();
+        full_msg += std::to_string(tm.tm_year + 1900);
+        full_msg += "-";
+        full_msg += std::to_string(tm.tm_mon + 1);
+        full_msg += "-";
+        full_msg += std::to_string(tm.tm_mday);
+        full_msg += " ";
+        full_msg += std::to_string(tm.tm_hour);
+        full_msg += ":";
+        full_msg += std::to_string(tm.tm_min);
+        full_msg += ":";
+        full_msg += std::to_string(tm.tm_sec);
+        full_msg += ".";
+        {
+            using std::chrono::duration_cast;
+            using std::chrono::seconds;
+            std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+
+            auto duration = tp.time_since_epoch();
+            auto secs = duration_cast<seconds>(duration);
+            auto elp = duration_cast<std::chrono::microseconds>(duration) - duration_cast<std::chrono::microseconds>(secs);
+
+            full_msg += std::to_string(elp.count());
+        }
+        full_msg += "]";
+
+        full_msg += " ";
+        full_msg += "[";
+        full_msg += msg._logger_name;
+        full_msg += "]";
+
+        full_msg += " ";
+        full_msg += "[";
+        full_msg += msg._level.format();
+        full_msg += "]";
+
+        full_msg += " ";
+        full_msg += msg._msg;
+
+        return full_msg;
     }
 };
 
@@ -146,15 +203,6 @@ public:
     std::string format(const log_event& msg) override
     {
         return msg._loc._filename;
-    }
-};
-
-// name of file with path
-class g_format_item : public format_item {
-public:
-    std::string format(const log_event& msg) override
-    {
-        return "/haha/" + msg._loc._filename;
     }
 };
 
@@ -184,12 +232,6 @@ formatter::formatter(const std::string& pattern)
     parse();
 }
 
-void formatter::set_pattern(const std::string& pattern)
-{
-    _pattern = pattern;
-    parse();
-}
-
 std::string formatter::format(const log_event& msg)
 {
     std::string formatted_msg;
@@ -198,6 +240,11 @@ std::string formatter::format(const log_event& msg)
     }
 
     return formatted_msg;
+}
+
+std::unique_ptr<formatter> formatter::clone()
+{
+    return detail::make_unique<formatter>(_pattern);
 }
 
 /*
@@ -215,13 +262,12 @@ std::string formatter::format(const log_event& msg)
  * %+	        spdlog's default format	                                    "[2014-10-31 23:46:59.678] [mylogger] [info] Some message"
  * %@	        Source file and line (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc. instead of spdlog::trace(...)	my_file.cpp:123
  * %s	        Basename of the source file (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc.)	my_file.cpp
- * %g	        Full or relative path of the source file as appears in the __FILE__ macro (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc.)	/some/dir/my_file.cpp
  * %#	        Source line (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc.)	123
  * %!	        Source function (use SPDLOG_TRACE(..), SPDLOG_INFO(...) etc. see tweakme for pretty-print)	my_func
 */
 void formatter::parse()
 {
-    std::unique_ptr<ch_format_item> p;
+    std::unique_ptr<aggregate_formatter> p;
     for (auto it = _pattern.begin(); it != _pattern.end(); ++it) {
         if (*it == '%') {
             if (p) {
@@ -264,15 +310,13 @@ void formatter::parse()
                 _formatters.emplace_back(detail::make_unique<ch_format_item>('%'));
                 break;
             case '+':
+                _formatters.emplace_back(detail::make_unique<default_format_item>());
                 break;
             case '@':
                 _formatters.emplace_back(detail::make_unique<line_format_item>());
                 break;
             case 's':
                 _formatters.emplace_back(detail::make_unique<s_format_item>());
-                break;
-            case 'g':
-                _formatters.emplace_back(detail::make_unique<g_format_item>());
                 break;
             case '#':
                 _formatters.emplace_back(detail::make_unique<line_format_item>());
@@ -290,7 +334,7 @@ void formatter::parse()
         }
         else {
             if (!p) {
-                p = detail::make_unique<ch_format_item>();
+                p = detail::make_unique<aggregate_formatter>();
             }
             p->add_ch(*it);
         }

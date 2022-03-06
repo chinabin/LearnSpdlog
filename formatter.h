@@ -17,8 +17,8 @@ class formatter {
 public:
     formatter(const std::string& pattern);
 
-    void set_pattern(const std::string& pattern);
     std::string format(const log_event& msg);
+    std::unique_ptr<formatter> clone();
 
 private:
     void parse();

@@ -6,10 +6,14 @@ namespace fatdog {
 
 enum LOG_LEVEL
 {
+    LOG_LEVEL_NONE,
+    LOG_LEVEL_TRACE,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
     LOG_LEVEL_WARN,
     LOG_LEVEL_ERROR,
+    LOG_LEVEL_CRITICAL,
+    LOG_LEVEL_END,
 };
 
 struct log_level {
@@ -40,15 +44,30 @@ struct source_loc
 };
 
 
+struct log_time 
+{
+    std::string _time;
+};
+
+struct extra_info
+{
+    int _thread_id = -1;
+};
+
+
 
 class log_event {
 public:
-    log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc);
+    log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const log_time& ltime, const std::string& logger_name, const extra_info& einfo);
+    log_event(const std::string& msg, LOG_LEVEL level, const source_loc& loc, const std::string& logger_name);
 
 public:
     std::string _msg;
+    std::string _logger_name;
     log_level _level;
     source_loc _loc;
+    log_time _time;
+    extra_info _extra_info;
 };
 
 }

@@ -4,56 +4,25 @@
 
 namespace fatdog {
 
-logger::logger()
+logger::logger(const std::string& logger_name)
+    :_logger_name(logger_name)
 {
-    auto new_formatter = detail::make_unique<formatter>("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
-    _formatter = std::move(new_formatter);
-    auto new_level = detail::make_unique<log_level>(LOG_LEVEL::LOG_LEVEL_INFO);
-    _level = std::move(new_level);
-    auto new_sink = detail::make_unique<stdout_sink>();
-    add_sink(std::move(new_sink));
-}
-
-logger::logger(std::unique_ptr<formatter> formatter, LOG_LEVEL level)
-    :_formatter(std::move(formatter))
-{
-    auto new_level = detail::make_unique<log_level>(level);
-    _level = std::move(new_level);
-    auto new_sink = detail::make_unique<stdout_sink>();
-    add_sink(std::move(new_sink));
-}
-
-logger::logger(std::unique_ptr<formatter> formatter)
-    :_formatter(std::move(formatter))
-{
-    auto new_level = detail::make_unique<log_level>(LOG_LEVEL::LOG_LEVEL_INFO);
-    _level = std::move(new_level);
-    auto new_sink = detail::make_unique<stdout_sink>();
-    add_sink(std::move(new_sink));
-}
-
-logger::logger(std::unique_ptr<log_level> level)
-    :_level(std::move(level))
-{
-    auto new_formatter = detail::make_unique<formatter>("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
-    _formatter = std::move(new_formatter);
-    auto new_sink = detail::make_unique<stdout_sink>();
-    add_sink(std::move(new_sink));
+    _level = detail::make_unique<log_level>(LOG_LEVEL::LOG_LEVEL_INFO);
+    add_sink(detail::make_unique<stdout_sink>());
 }
 
 logger::logger(const std::string& logger_name, std::unique_ptr<sink> s)
     :_logger_name(logger_name)
 {
-    auto new_formatter = detail::make_unique<formatter>("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
-    _formatter = std::move(new_formatter);
-    auto new_level = detail::make_unique<log_level>(LOG_LEVEL::LOG_LEVEL_INFO);
-    _level = std::move(new_level);
+    _level = detail::make_unique<log_level>(LOG_LEVEL::LOG_LEVEL_INFO);
     _sinks.emplace_back(std::move(s));
 }
 
-void logger::set_formatter(std::unique_ptr<formatter> formatter)
+void logger::set_formatter(std::unique_ptr<formatter> fmter)
 {
-    _formatter = std::move(formatter);
+    for (auto const &it : _sinks) {
+        it->set_formatter(fmter->clone());
+    }
 }
 
 void logger::set_level(LOG_LEVEL level)
@@ -71,12 +40,41 @@ void logger::add_sink(std::unique_ptr<sink> s)
     _sinks.emplace_back(std::move(s));
 }
 
-void logger::log(const std::string& msg)
+
+std::string logger::name()
 {
-    log_event event{msg, _level->_level, {__FILE__, __LINE__, __FUNCTION__}};
-    for (auto& it : _sinks) {
-        it->log(event);
-    }
+    return _logger_name;
 }
+
+// void logger::trace(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_TRACE, msg);
+// }
+
+// void logger::debug(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_DEBUG, msg);
+// }
+
+// void logger::info(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_INFO, msg);
+// }
+
+// void logger::warn(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_WARN, msg);
+// }
+
+// void logger::error(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_ERROR, msg);
+// }
+
+// void logger::critical(const std::string& msg)
+// {
+//     log(LOG_LEVEL::LOG_LEVEL_CRITICAL, msg);
+// }
+
 
 }
